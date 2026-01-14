@@ -102,7 +102,9 @@ const PLAYER_POOLS = {
 const TIER_VALUE = { S: 100, A: 80, B: 60, C: 40, D: 20 };
 const POSITIONS = ['PG', 'SG', 'SF', 'PF', 'C'];
 const opensPerRound = [0, 3, 2, 2, 1, 1];
-const multipliers = [0, 0.45, 0.55, 0.65, 0.80, 0.95];
+const multipliers = [0, 0.18, 0.28, 0.38, 0.50, 0.65];
+
+
 
 const shuffle = (arr) => {
   const copy = [...arr];
@@ -133,7 +135,20 @@ export default function NBATeamDealOrNoDeal() {
   const initPositionGame = () => {
     const position = POSITIONS[currentPositionIndex];
     const pool = PLAYER_POOLS[position];
-    const tenPlayers = shuffle(pool).slice(0, 10);
+    const desired = { S: 2, A: 3, B: 3, C: 1, D: 1 };
+
+  let tenPlayers = [];
+  for (const [tier, count] of Object.entries(desired)) {
+    const tierPlayers = shuffle(pool.filter(p => p.tier === tier));
+    tenPlayers.push(...tierPlayers.slice(0, count));
+  }
+
+  // If we somehow got less than 10 (missing tiers), fill randomly
+  if (tenPlayers.length < 10) {
+    const remaining = pool.filter(p => !tenPlayers.some(x => x.name === p.name));
+    tenPlayers.push(...shuffle(remaining).slice(0, 10 - tenPlayers.length));
+  }
+
     
     const cases = shuffle(tenPlayers).map((p, i) => ({
       id: i + 1,
@@ -368,9 +383,7 @@ export default function NBATeamDealOrNoDeal() {
             <Trophy className="w-10 h-10 text-yellow-400" />
             NBA Team Deal or No Deal
           </h1>
-          <p className="text-purple-300">Build your championship roster - one position at a time!</p>
         </div>
-
         {completedTeam.length > 0 && (
           <div className="bg-slate-800/50 rounded-lg p-4 mb-6 border-2 border-purple-500/30">
             <h2 className="text-xl font-bold mb-3 flex items-center gap-2">
@@ -388,7 +401,7 @@ export default function NBATeamDealOrNoDeal() {
                         <img 
                           src={member.player.img} 
                           alt={member.player.name}
-                          className="w-16 h-16 mx-auto mb-2 rounded"
+                          className="w-28 h-28 mx-auto mb-2 rounded object-cover"
                         />
                         <div className="text-xs font-semibold">{member.player.name}</div>
                         <div className="text-xs text-yellow-400">{member.player.tier}-tier</div>
@@ -427,8 +440,8 @@ export default function NBATeamDealOrNoDeal() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div>
+            <div className="grid grid-cols-10 gap-6">
+              <div className="col-span-3">
                 <div className="bg-slate-800/50 rounded-lg p-4 mb-4">
                   <div className="text-xl font-bold mb-2">
                     {gameState.phase === "pick" && "Pick your case"}
@@ -448,7 +461,7 @@ export default function NBATeamDealOrNoDeal() {
                           <img 
                             src={gameState.lastOffer.player.img} 
                             alt={gameState.lastOffer.player.name}
-                            className="w-20 h-20 rounded"
+                            className="w-20 h-20 rounded object-cover"
                           />
                           <div className="text-yellow-400 text-lg">
                             {gameState.lastOffer.player.tier}-tier
@@ -508,8 +521,8 @@ export default function NBATeamDealOrNoDeal() {
                 </div>
               </div>
 
-              <div>
-                <div className="grid grid-cols-5 gap-2">
+              <div className="col-span-7">
+                  <div className="grid grid-cols-5 gap-2">
                   {gameState.cases.map(c => (
                     <button
                       key={c.id}
@@ -532,7 +545,8 @@ export default function NBATeamDealOrNoDeal() {
                           <img 
                             src={c.player.img} 
                             alt={c.player.name}
-                            className="w-12 h-12 rounded mb-1"
+                            className="w-28 h-28 mx-auto mb-2 rounded object-cover"
+
                           />
                           <div className="text-xs leading-tight">{c.player.name}</div>
                           <div className="text-xs text-yellow-400">{c.player.tier}</div>
